@@ -12,6 +12,7 @@ contract CloudCoinsStakingTest is Test {
     address OWNER = makeAddr("OWNER");
     address BOB = makeAddr("BOB");
     uint256 public constant STAKING_AMOUNT = 100;
+    uint256 public constant STAKE_GAS_TARGET = 160000;
     function setUp() public {
         vm.startPrank(OWNER);
         coin = new CloudCoin();
@@ -21,6 +22,7 @@ contract CloudCoinsStakingTest is Test {
     }
 
     function testStake() public {
+        uint256 gasBefore = gasleft();
         vm.startPrank(OWNER);
         coin.mint(OWNER, STAKING_AMOUNT);
         coin.approve(address(stakingContract), STAKING_AMOUNT);
@@ -29,11 +31,11 @@ contract CloudCoinsStakingTest is Test {
             STAKING_AMOUNT
         );
         stakingContract.stake(STAKING_AMOUNT);
-        (uint256 amount, uint256 stakingTime) = stakingContract.getStaker(
-            OWNER
-        );
+        (uint256 amount, ) = stakingContract.getStaker(OWNER);
         assertEq(amount, STAKING_AMOUNT);
         assertEq(stakingContract.s_totalStaked(), STAKING_AMOUNT);
+        uint256 gasAfter = gasleft();
+        assert(gasBefore - gasAfter < STAKE_GAS_TARGET);
     }
 
     function testUnstake() public {
@@ -43,9 +45,7 @@ contract CloudCoinsStakingTest is Test {
         stakingContract.stake(STAKING_AMOUNT);
         stakingContract.unstake();
         vm.stopPrank();
-        (uint256 amount, uint256 stakingTime) = stakingContract.getStaker(
-            OWNER
-        );
+        (uint256 amount, ) = stakingContract.getStaker(OWNER);
         assertEq(amount, 0);
         assertEq(stakingContract.s_totalStaked(), 0);
         assertEq(coin.balanceOf(OWNER), STAKING_AMOUNT);
@@ -75,7 +75,7 @@ contract CloudCoinsStakingTest is Test {
     function testAliceReward() public {
         uint256 aliceStake = 5000;
         uint256 totalStake = 25000;
-        uint256 totalReward = 200000;
+
         uint256 aliceReward = (TOTAL_COINS * aliceStake) / totalStake;
         uint256 expectedUnstakedAmount = aliceStake + aliceReward;
 
