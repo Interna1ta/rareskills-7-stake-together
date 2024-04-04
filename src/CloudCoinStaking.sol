@@ -34,7 +34,7 @@ contract CloudCoinStaking {
         if (s_stakers[msg.sender].amount != 0) {
             revert CloudCoinStaking__AlreadyStaked("Already staked");
         }
-        
+
         IERC20(i_cloudCoin).transferFrom(msg.sender, address(this), _amount);
 
         s_stakers[msg.sender].amount = _amount;
@@ -56,7 +56,8 @@ contract CloudCoinStaking {
         s_stakers[msg.sender].stakingTime = 0;
         s_totalStaked -= amount;
 
-        //  payable(msg.sender).transfer(amount + reward);
+
+        IERC20(i_cloudCoin).transfer(msg.sender, amount + reward);
 
         emit RewardClaimed(msg.sender, amount, reward);
     }
